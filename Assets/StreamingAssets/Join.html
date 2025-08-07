@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Game</title>
+
+    <style>
+        main {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: rgb(53, 53, 53);
+        }
+
+        form {
+            background-color: rgb(253, 230, 253);
+            padding: 1em;
+            border-radius: 5px;
+        }
+
+        form > label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1em;
+        }
+
+        form > label > input {
+            margin-left: .5em;
+            padding: .25em;
+        }
+
+        form > button {
+            padding: .75em;
+            cursor: pointer;
+            width: 100%;
+            color: inherit;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <form>
+            <label>
+                Game Code:
+                <input type="number" name="game-code">
+            </label>
+            <button>Join</button>
+        </form>
+    </main>
+</body>
+</html>

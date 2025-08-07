@@ -1,219 +1,120 @@
+// SimpleHTTPServer.cs (Modified)
+// I've added a thread-safe queue and changed how methods are invoked.
+
 using UnityEngine;
-using System.Collections;
 using System;
+using System.Collections.Concurrent; // Required for the thread-safe queue
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Net.Sockets;
-using System.Net;
 using System.IO;
-using System.Threading;
-using System.Diagnostics;
+using System.Linq;
+using System.Net;
 using System.Reflection;
+using System.Text;
+using System.Threading;
 
 public class SimpleHTTPServer
 {
-    const string default404Page = @"
-<head>
-<style>*{
-    transition: all 0.6s;
-}
-
-html {
-    height: 100%;
-}
-
-body{
-    font-family: 'Lato', sans-serif;
-    color: #888;
-    margin: 0;
-}
-
-#main{
-    display: table;
-    width: 100%;
-    height: 100vh;
-    text-align: center;
-}
-
-.fof{
-	  display: table-cell;
-	  vertical-align: middle;
-}
-
-.fof h1{
-	  font-size: 50px;
-	  display: inline-block;
-	  padding-right: 12px;
-	  animation: type .5s alternate infinite;
-}
-
-@keyframes type{
-	  from{box-shadow: inset -3px 0px 0px #888;}
-	  to{box-shadow: inset -3px 0px 0px transparent;}
-}</style>
-</head>
-<body>
-    <div id='main'>
-    <div class='fof'>
-        <h1>Levi wuz here :)</h1>
-    </div>
-    </div>
-</body>
-";
-
-    public Func<object, string> OnJsonSerialized;
-    static int bufferSize = 16;
-    public System.Object _methodController;
-    private readonly string[] _indexFiles =
+    // A thread-safe queue to hold actions that need to run on the main thread.
+    private readonly ConcurrentQueue<Action> _mainThreadActions = new ConcurrentQueue<Action>();
+    
+    private readonly string[] _indexFiles = { "index.html", "index.htm" };
+    private readonly IDictionary<string, string> _mimeTypeMappings = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase)
     {
-                    "index.html",
-                    "index.htm",
-                    "default.html",
-                    "default.htm"
-            };
+        #region extension to MIME type list
+        { ".css", "text/css" },
+        { ".html", "text/html" },
+        { ".js", "application/javascript" },
+        { ".json", "application/json" },
+        { ".png", "image/png" },
+        { ".jpg", "image/jpeg" },
+        { ".svg", "image/svg+xml" },
+        { ".txt", "text/plain" },
+        // Add other MIME types as needed
+        #endregion
+    };
 
-    private static IDictionary<string, string> _mimeTypeMappings = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase)
-            {
-			#region extension to MIME type list
-					{ ".asf", "video/x-ms-asf" },
-                    { ".asx", "video/x-ms-asf" },
-                    { ".avi", "video/x-msvideo" },
-                    { ".bin", "application/octet-stream" },
-                    { ".cco", "application/x-cocoa" },
-                    { ".crt", "application/x-x509-ca-cert" },
-                    { ".css", "text/css" },
-                    { ".deb", "application/octet-stream" },
-                    { ".der", "application/x-x509-ca-cert" },
-                    { ".dll", "application/octet-stream" },
-                    { ".dmg", "application/octet-stream" },
-                    { ".ear", "application/java-archive" },
-                    { ".eot", "application/octet-stream" },
-                    { ".exe", "application/octet-stream" },
-                    { ".flv", "video/x-flv" },
-                    { ".gif", "image/gif" },
-                    { ".hqx", "application/mac-binhex40" },
-                    { ".htc", "text/x-component" },
-                    { ".htm", "text/html" },
-                    { ".html", "text/html" },
-                    { ".ico", "image/x-icon" },
-                    { ".img", "application/octet-stream" },
-                    { ".svg", "image/svg+xml" },
-                    { ".iso", "application/octet-stream" },
-                    { ".jar", "application/java-archive" },
-                    { ".jardiff", "application/x-java-archive-diff" },
-                    { ".jng", "image/x-jng" },
-                    { ".jnlp", "application/x-java-jnlp-file" },
-                    { ".jpeg", "image/jpeg" },
-                    { ".jpg", "image/jpeg" },
-                    { ".js", "application/x-javascript" },
-                    { ".mml", "text/mathml" },
-                    { ".mng", "video/x-mng" },
-                    { ".mov", "video/quicktime" },
-                    { ".mp3", "audio/mpeg" },
-                    { ".mpeg", "video/mpeg" },
-                    { ".mp4", "video/mp4" },
-                    { ".mpg", "video/mpeg" },
-                    { ".msi", "application/octet-stream" },
-                    { ".msm", "application/octet-stream" },
-                    { ".msp", "application/octet-stream" },
-                    { ".pdb", "application/x-pilot" },
-                    { ".pdf", "application/pdf" },
-                    { ".pem", "application/x-x509-ca-cert" },
-                    { ".pl", "application/x-perl" },
-                    { ".pm", "application/x-perl" },
-                    { ".png", "image/png" },
-                    { ".prc", "application/x-pilot" },
-                    { ".ra", "audio/x-realaudio" },
-                    { ".rar", "application/x-rar-compressed" },
-                    { ".rpm", "application/x-redhat-package-manager" },
-                    { ".rss", "text/xml" },
-                    { ".run", "application/x-makeself" },
-                    { ".sea", "application/x-sea" },
-                    { ".shtml", "text/html" },
-                    { ".sit", "application/x-stuffit" },
-                    { ".swf", "application/x-shockwave-flash" },
-                    { ".tcl", "application/x-tcl" },
-                    { ".tk", "application/x-tcl" },
-                    { ".txt", "text/plain" },
-                    { ".war", "application/java-archive" },
-                    { ".wbmp", "image/vnd.wap.wbmp" },
-                    { ".wmv", "video/x-ms-wmv" },
-                    { ".xml", "text/xml" },
-                    { ".xpi", "application/x-xpinstall" },
-                    { ".zip", "application/zip" },
-			#endregion
-			};
     private Thread _serverThread;
-    private string _rootDirectory;
+    private readonly string _rootDirectory;
     private HttpListener _listener;
-    private int _port;
+    private readonly int _port;
+    private readonly int _bufferSize;
+    private readonly object _methodController;
+    
+    public Func<object, string> OnJsonSerialized;
+    public int Port => _port;
 
-    public int Port
+    public SimpleHTTPServer(string path, int port, object controller, int buffer)
     {
-        get { return _port; }
-        private set { }
+        _rootDirectory = path;
+        _port = port;
+        _methodController = controller;
+        _bufferSize = buffer * 1024; // Convert KB to Bytes
+        Initialize();
     }
 
-    /// <summary>
-    /// Construct server with given port, path ,controller and buffer.
-    /// </summary>
-    /// <param name="path">The root folder path in your computer (Absolute path)</param>
-    /// <param name="port">The port for your http server</param>
-    /// <param name="controller">The controller instance for the WebAPI</param>
-    /// <param name="buffer">The buffer size for the http response</param>
-    public SimpleHTTPServer(string path, int port, System.Object controller, int buffer)
+    private void Initialize()
     {
-        this._methodController = controller;
-	bufferSize = buffer;
-        this.Initialize(path, port);
+        _serverThread = new Thread(Listen);
+        _serverThread.IsBackground = true;
+        _serverThread.Start();
     }
-
-    /// <summary>
-    /// Construct server with given port, path and buffer.
-    /// </summary>
-    /// <param name="path">The root folder path in your computer (Absolute path)</param>
-    /// <param name="port">The port for your http server</param>
-    /// <param name="buffer">The buffer size for the http response</param>
-    public SimpleHTTPServer(string path, int port, int buffer)
-    {
-        bufferSize = buffer;
-        this.Initialize(path, port);
-    }
-
-    /// <summary>
-    /// Stop Server
-    /// </summary>
+    
     public void Stop()
     {
-        _serverThread.Abort();
-        _listener.Stop();
+        // Use Abort with caution, but it's often necessary on application quit.
+        if (_serverThread != null && _serverThread.IsAlive) _serverThread.Abort();
+        if (_listener != null && _listener.IsListening) _listener.Stop();
+    }
+
+    // This method is called from the main thread via UnityHTTPServer.Update()
+    public void ProcessMainThreadActions()
+    {
+        while (_mainThreadActions.TryDequeue(out var action))
+        {
+            action.Invoke();
+        }
     }
 
     private void Listen()
     {
         _listener = new HttpListener();
-        _listener.Prefixes.Add("http://*:" + _port.ToString() + "/");
+        _listener.Prefixes.Add($"http://*:{_port}/");
         _listener.Start();
         while (true)
         {
             try
             {
                 HttpListenerContext context = _listener.GetContext();
-                Process(context);
+                // Queue the request processing to be handled by a new thread from the pool
+                ThreadPool.QueueUserWorkItem(o => ProcessRequest(context));
+            }
+            catch (ThreadAbortException)
+            {
+                // This is expected when we call Stop()
+                break;
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.Log(ex);
+                Debug.LogError($"Listener loop error: {ex.Message}");
             }
         }
     }
 
-    private void Process(HttpListenerContext context)
+    private void ProcessRequest(HttpListenerContext context)
     {
-        string filename = context.Request.Url.AbsolutePath;
-        filename = filename.Substring(1);
+        string urlPath = context.Request.Url.AbsolutePath;
+        string filename = urlPath.Substring(1);
 
+        // Check if the URL is an API call (e.g., /MyMethodName)
+        var method = TryParseToController(context.Request.Url);
+        if (method != null)
+        {
+            // This is an API call, handle it and return.
+            HandleApiRequest(context, method);
+            return;
+        }
+
+        // If not an API call, treat it as a file request.
         if (string.IsNullOrEmpty(filename))
         {
             foreach (string indexFile in _indexFiles)
@@ -226,199 +127,147 @@ body{
             }
         }
 
-        filename = Path.Combine(_rootDirectory, filename);
-
-        Dictionary<string, object> namedParameters = new Dictionary<string, object>();
+        string filePath = Path.Combine(_rootDirectory, filename);
+        if (File.Exists(filePath))
+        {
+            ServeFile(context, filePath);
+        }
+        else
+        {
+            SendResponse(context, "<h1>404 - Not Found</h1>", "text/html", HttpStatusCode.NotFound);
+        }
+    }
+    
+    private void HandleApiRequest(HttpListenerContext context, MethodInfo method)
+    {
+        // This part runs on the background thread.
+        var namedParameters = new Dictionary<string, object>();
         if (!string.IsNullOrEmpty(context.Request.Url.Query))
         {
-            UnityEngine.Debug.Log(context.Request.Url.Query);
             var query = context.Request.Url.Query.Replace("?", "").Split('&');
             foreach (var item in query)
             {
                 var t = item.Split('=');
-
-
-                namedParameters.Add(t[0], t[1]);
+                if (t.Length == 2)
+                {
+                    // URL Decode the parameter value
+                    namedParameters.Add(t[0], Uri.UnescapeDataString(t[1]));
+                }
             }
         }
-
-        var method = TryParseToController(context.Request.Url);
-
-        if (File.Exists(filename))
+        
+        // **THE CRITICAL CHANGE**
+        // We don't invoke the method here. We queue it to run on the main thread.
+        _mainThreadActions.Enqueue(() =>
         {
-            TryServeFile();
-        }
-        //A ASP.Net MVC like controller route
-        else if (method != null)
-        {
-            context.Response.ContentType = "application/json";
-
-            object result = null;
+            // This code will be executed safely on the main thread.
             try
             {
-                result = method.InvokeWithNamedParameters(_methodController, namedParameters);
+                object result = method.InvokeWithNamedParameters(_methodController, namedParameters);
+                
+                // Handle the response after the method is invoked.
+                string jsonResponse = "{}"; // Default empty JSON
+                if (result != null && OnJsonSerialized != null)
+                {
+                    jsonResponse = OnJsonSerialized.Invoke(result);
+                }
+                SendResponse(context, jsonResponse, "application/json", HttpStatusCode.OK);
             }
             catch (Exception ex)
             {
-                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                UnityEngine.Debug.LogError(ex);
-                context.Response.StatusDescription = ex.Message;
-                goto WebResponse;
+                Debug.LogError($"API Method Invocation Error: {ex.InnerException?.Message ?? ex.Message}");
+                SendResponse(context, "{\"error\":\"Internal Server Error\"}", "application/json", HttpStatusCode.InternalServerError);
             }
-            if (result == null)
-            {
-                result = new VoidResult { msg = "Success" };
-            }
-            string jsonString = "";
-            if (OnJsonSerialized == null)
-            {
-                UnityEngine.Debug.LogError("There is no JsonSerialize delegate regist on SimpleHTTPServer.OnJsonSerialized");
-                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                context.Response.StatusDescription = "There is no JsonSerialize delegate regist on SimpleHTTPServer.OnJsonSerialized";
-                goto WebResponse;
-            }
-            else
-            {
-                jsonString = OnJsonSerialized.Invoke(result);
-            }
-
-            byte[] jsonByte = Encoding.UTF8.GetBytes(jsonString);
-            context.Response.ContentLength64 = jsonByte.Length;
-            Stream jsonStream = new MemoryStream(jsonByte);
-            byte[] buffer = new byte[1024 * bufferSize];
-            int nbytes;
-            while ((nbytes = jsonStream.Read(buffer, 0, buffer.Length)) > 0)
-                context.Response.OutputStream.Write(buffer, 0, nbytes);
-            jsonStream.Close();
-        }
-        else
-        {
-            byte[] resultByte = Encoding.UTF8.GetBytes(default404Page);
-            Stream resultStream = new MemoryStream(resultByte);
-            context.Response.StatusCode = (int)HttpStatusCode.NotFound;
-            context.Response.ContentType = "text/html";
-            context.Response.ContentLength64 = resultByte.Length;
-            context.Response.AddHeader("Date", DateTime.Now.ToString("r"));
-            context.Response.AddHeader("Last-Modified", System.IO.File.GetLastWriteTime(filename).ToString("r"));
-
-            byte[] buffer = new byte[1024 * bufferSize];
-            int nbytes;
-            while ((nbytes = resultStream.Read(buffer, 0, buffer.Length)) > 0)
-                context.Response.OutputStream.Write(buffer, 0, nbytes);
-            resultStream.Close();
-
-        }
-    WebResponse:
-        context.Response.OutputStream.Flush();
-        context.Response.OutputStream.Close();
-
-        void TryServeFile()
-        {
-            try
-            {
-                context.Response.StatusCode = (int)HttpStatusCode.OK;
-                Stream input = new FileStream(filename, FileMode.Open, FileAccess.Read);
-
-                //Adding permanent http response headers
-                string mime;
-                context.Response.ContentType = _mimeTypeMappings.TryGetValue(Path.GetExtension(filename), out mime) ? mime : "application/octet-stream";
-                context.Response.ContentLength64 = input.Length;
-                context.Response.AddHeader("Date", DateTime.Now.ToString("r"));
-                context.Response.AddHeader("Last-Modified", System.IO.File.GetLastWriteTime(filename).ToString("r"));
-
-                byte[] buffer = new byte[1024 * bufferSize];
-                int nbytes;
-                while ((nbytes = input.Read(buffer, 0, buffer.Length)) > 0)
-                    context.Response.OutputStream.Write(buffer, 0, nbytes);
-                input.Close();
-
-            }
-            catch (Exception ex)
-            {
-                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                UnityEngine.Debug.LogError(ex);
-                context.Response.StatusDescription = ex.Message;
-            }
-        }
+        });
     }
 
-    private void Initialize(string path, int port)
+    private void ServeFile(HttpListenerContext context, string filePath)
     {
-        this._rootDirectory = path;
-        this._port = port;
-        _serverThread = new Thread(this.Listen);
-        _serverThread.Start();
-    }
-
-    System.Reflection.MethodInfo TryParseToController(Uri uri)
-    {
-        if (uri.Segments.Length <= 1)
-        {
-            return null;
-        }
-        string methodName = uri.Segments[1].Replace("/", "");
-        System.Reflection.MethodInfo method = null;
         try
         {
-            method = _methodController.GetType().GetMethod(methodName);
+            using (Stream input = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            {
+                string mimeType = "application/octet-stream";
+                _mimeTypeMappings.TryGetValue(Path.GetExtension(filePath), out mimeType);
+                
+                context.Response.ContentType = mimeType;
+                context.Response.ContentLength64 = input.Length;
+                context.Response.StatusCode = (int)HttpStatusCode.OK;
+
+                byte[] buffer = new byte[_bufferSize];
+                int nbytes;
+                while ((nbytes = input.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    context.Response.OutputStream.Write(buffer, 0, nbytes);
+                }
+            }
+            context.Response.OutputStream.Close();
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"File serving error: {ex.Message}");
+            SendResponse(context, "{\"error\":\"Could not serve file\"}", "application/json", HttpStatusCode.InternalServerError);
+        }
+    }
+    
+    private void SendResponse(HttpListenerContext context, string content, string contentType, HttpStatusCode code)
+    {
+        try
+        {
+            byte[] buffer = Encoding.UTF8.GetBytes(content);
+            context.Response.ContentType = contentType;
+            context.Response.ContentLength64 = buffer.Length;
+            context.Response.StatusCode = (int)code;
+            context.Response.OutputStream.Write(buffer, 0, buffer.Length);
+            context.Response.OutputStream.Close();
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error sending response: {ex.Message}");
+        }
+    }
+
+    private MethodInfo TryParseToController(Uri uri)
+    {
+        if (uri.Segments.Length < 2) return null;
+        
+        string methodName = uri.Segments[1].Replace("/", "");
+        try
+        {
+            return _methodController.GetType().GetMethod(methodName);
         }
         catch
         {
-            method = null;
+            return null;
         }
-
-        return method;
-    }
-
-    //Mark as Serializable to make Unity's JsonUtility works.
-    [System.Serializable]
-    class VoidResult
-    {
-        public string msg;
     }
 }
 
-//MethodInfo 可使用具名變數的擴充方法
+// This extension class allows calling methods using named parameters from a dictionary.
 public static class ReflectionExtensions
 {
-
     public static object InvokeWithNamedParameters(this MethodBase self, object obj, IDictionary<string, object> namedParameters)
     {
         return self.Invoke(obj, MapParameters(self, namedParameters));
     }
 
-    public static object[] MapParameters(MethodBase method, IDictionary<string, object> namedParameters)
+    private static object[] MapParameters(MethodBase method, IDictionary<string, object> namedParameters)
     {
-        ParameterInfo[] paramInfos = method.GetParameters().ToArray();
-        object[] parameters = new object[paramInfos.Length];
-        int index = 0;
-        foreach (var item in paramInfos)
+        var paramInfos = method.GetParameters();
+        var parameters = new object[paramInfos.Length];
+
+        for (int i = 0; i < paramInfos.Length; i++)
         {
-            object parameterName;
-            if (!namedParameters.TryGetValue(item.Name, out parameterName))
+            var paramInfo = paramInfos[i];
+            if (namedParameters.TryGetValue(paramInfo.Name, out object value))
             {
-                parameters[index] = Type.Missing;
-                index++;
-                continue;
+                parameters[i] = Convert.ChangeType(value, paramInfo.ParameterType);
             }
-            parameters[index] = ObjectCastTypeByParameterInfo(item, parameterName);
-            index++;
+            else
+            {
+                parameters[i] = paramInfo.HasDefaultValue ? paramInfo.DefaultValue : Type.Missing;
+            }
         }
         return parameters;
-    }
-    static object ObjectCastTypeByParameterInfo(ParameterInfo parameterInfo, object value)
-    {
-        if (parameterInfo.ParameterType == typeof(int) ||
-            parameterInfo.ParameterType == typeof(System.Int32) ||
-            parameterInfo.ParameterType == typeof(System.Int16) ||
-            parameterInfo.ParameterType == typeof(System.Int64))
-        {
-            return (int)Convert.ChangeType(value, typeof(int));
-        }
-        else
-        {
-            return value;
-        }
-
     }
 }

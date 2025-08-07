@@ -4,9 +4,13 @@ using UnityEngine;
 
 public class TestController : MonoBehaviour
 {
-    public void SimpleMethod()
+    [SerializeField]
+    private GameObject cube;
+
+    public void SpawnCube()
     {
-        Debug.Log("Cool, fire via http connect");
+        Debug.Log("SpawnCube called via api");
+        Instantiate(cube);
     }
 
     public string[] SimpleStringMethod()

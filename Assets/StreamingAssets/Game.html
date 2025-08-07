@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        header {
+            background-color: rgb(253, 230, 253);
+            padding: 1em;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        header > h1 {
+            font-size: large;
+            margin: 0;
+        }
+
+        main {
+            margin: 2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 75vh;
+            color: rgb(53, 53, 53);
+        }
+
+        button {
+            -webkit-appearance: none;
+            appearance: none;
+            padding: .75em;
+            cursor: pointer;
+            width: 100%;
+            color: inherit;
+            border-radius: 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Game</h1>
+    </header>
+    <main>
+        <button id="drop-cube">Drop cube</button>
+    </main>
+</body>
+</html>
+
+<script defer>
+    document.getElementById('drop-cube').addEventListener('click', e => {
+        console.log('doing it');
+        fetch('/SpawnCube');
+    });
+</script>

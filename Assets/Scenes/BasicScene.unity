@@ -635,6 +635,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2114629045}
   - component: {fileID: 2114629044}
+  - component: {fileID: 2114629046}
   m_Layer: 0
   m_Name: http
   m_TagString: Untagged
@@ -658,7 +659,7 @@ MonoBehaviour:
   SaveFolder: 
   UseStreamingAssetsPath: 1
   bufferSize: 16
-  controller: {fileID: 0}
+  controller: {fileID: 2114629046}
 --- !u!4 &2114629045
 Transform:
   m_ObjectHideFlags: 0
@@ -674,6 +675,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2114629046
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2114629042}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b80960da9c60da45b5406e1501f7546, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cube: {fileID: 5766373939361512490, guid: abaaca0693dd15c45a8b63e6d7966951, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
