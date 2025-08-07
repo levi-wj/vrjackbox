@@ -11,7 +11,7 @@ using System.Threading;
 using System.Diagnostics;
 using System.Reflection;
 
-public class HTTPServer
+public class SimpleHTTPServer
 {
     const string default404Page = @"
 <head>
@@ -56,7 +56,7 @@ body{
 <body>
     <div id='main'>
     <div class='fof'>
-        <h1>Error 404</h1>
+        <h1>Levi wuz here :)</h1>
     </div>
     </div>
 </body>
@@ -67,83 +67,83 @@ body{
     public System.Object _methodController;
     private readonly string[] _indexFiles =
     {
-            "index.html",
-            "index.htm",
-            "default.html",
-            "default.htm"
-    };
+                    "index.html",
+                    "index.htm",
+                    "default.html",
+                    "default.htm"
+            };
 
     private static IDictionary<string, string> _mimeTypeMappings = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase)
-    {
-        #region extension to MIME type list
-            { ".asf", "video/x-ms-asf" },
-            { ".asx", "video/x-ms-asf" },
-            { ".avi", "video/x-msvideo" },
-            { ".bin", "application/octet-stream" },
-            { ".cco", "application/x-cocoa" },
-            { ".crt", "application/x-x509-ca-cert" },
-            { ".css", "text/css" },
-            { ".deb", "application/octet-stream" },
-            { ".der", "application/x-x509-ca-cert" },
-            { ".dll", "application/octet-stream" },
-            { ".dmg", "application/octet-stream" },
-            { ".ear", "application/java-archive" },
-            { ".eot", "application/octet-stream" },
-            { ".exe", "application/octet-stream" },
-            { ".flv", "video/x-flv" },
-            { ".gif", "image/gif" },
-            { ".hqx", "application/mac-binhex40" },
-            { ".htc", "text/x-component" },
-            { ".htm", "text/html" },
-            { ".html", "text/html" },
-            { ".ico", "image/x-icon" },
-            { ".img", "application/octet-stream" },
-            { ".svg", "image/svg+xml" },
-            { ".iso", "application/octet-stream" },
-            { ".jar", "application/java-archive" },
-            { ".jardiff", "application/x-java-archive-diff" },
-            { ".jng", "image/x-jng" },
-            { ".jnlp", "application/x-java-jnlp-file" },
-            { ".jpeg", "image/jpeg" },
-            { ".jpg", "image/jpeg" },
-            { ".js", "application/x-javascript" },
-            { ".mml", "text/mathml" },
-            { ".mng", "video/x-mng" },
-            { ".mov", "video/quicktime" },
-            { ".mp3", "audio/mpeg" },
-            { ".mpeg", "video/mpeg" },
-            { ".mp4", "video/mp4" },
-            { ".mpg", "video/mpeg" },
-            { ".msi", "application/octet-stream" },
-            { ".msm", "application/octet-stream" },
-            { ".msp", "application/octet-stream" },
-            { ".pdb", "application/x-pilot" },
-            { ".pdf", "application/pdf" },
-            { ".pem", "application/x-x509-ca-cert" },
-            { ".pl", "application/x-perl" },
-            { ".pm", "application/x-perl" },
-            { ".png", "image/png" },
-            { ".prc", "application/x-pilot" },
-            { ".ra", "audio/x-realaudio" },
-            { ".rar", "application/x-rar-compressed" },
-            { ".rpm", "application/x-redhat-package-manager" },
-            { ".rss", "text/xml" },
-            { ".run", "application/x-makeself" },
-            { ".sea", "application/x-sea" },
-            { ".shtml", "text/html" },
-            { ".sit", "application/x-stuffit" },
-            { ".swf", "application/x-shockwave-flash" },
-            { ".tcl", "application/x-tcl" },
-            { ".tk", "application/x-tcl" },
-            { ".txt", "text/plain" },
-            { ".war", "application/java-archive" },
-            { ".wbmp", "image/vnd.wap.wbmp" },
-            { ".wmv", "video/x-ms-wmv" },
-            { ".xml", "text/xml" },
-            { ".xpi", "application/x-xpinstall" },
-            { ".zip", "application/zip" },
-        #endregion
-    };
+            {
+			#region extension to MIME type list
+					{ ".asf", "video/x-ms-asf" },
+                    { ".asx", "video/x-ms-asf" },
+                    { ".avi", "video/x-msvideo" },
+                    { ".bin", "application/octet-stream" },
+                    { ".cco", "application/x-cocoa" },
+                    { ".crt", "application/x-x509-ca-cert" },
+                    { ".css", "text/css" },
+                    { ".deb", "application/octet-stream" },
+                    { ".der", "application/x-x509-ca-cert" },
+                    { ".dll", "application/octet-stream" },
+                    { ".dmg", "application/octet-stream" },
+                    { ".ear", "application/java-archive" },
+                    { ".eot", "application/octet-stream" },
+                    { ".exe", "application/octet-stream" },
+                    { ".flv", "video/x-flv" },
+                    { ".gif", "image/gif" },
+                    { ".hqx", "application/mac-binhex40" },
+                    { ".htc", "text/x-component" },
+                    { ".htm", "text/html" },
+                    { ".html", "text/html" },
+                    { ".ico", "image/x-icon" },
+                    { ".img", "application/octet-stream" },
+                    { ".svg", "image/svg+xml" },
+                    { ".iso", "application/octet-stream" },
+                    { ".jar", "application/java-archive" },
+                    { ".jardiff", "application/x-java-archive-diff" },
+                    { ".jng", "image/x-jng" },
+                    { ".jnlp", "application/x-java-jnlp-file" },
+                    { ".jpeg", "image/jpeg" },
+                    { ".jpg", "image/jpeg" },
+                    { ".js", "application/x-javascript" },
+                    { ".mml", "text/mathml" },
+                    { ".mng", "video/x-mng" },
+                    { ".mov", "video/quicktime" },
+                    { ".mp3", "audio/mpeg" },
+                    { ".mpeg", "video/mpeg" },
+                    { ".mp4", "video/mp4" },
+                    { ".mpg", "video/mpeg" },
+                    { ".msi", "application/octet-stream" },
+                    { ".msm", "application/octet-stream" },
+                    { ".msp", "application/octet-stream" },
+                    { ".pdb", "application/x-pilot" },
+                    { ".pdf", "application/pdf" },
+                    { ".pem", "application/x-x509-ca-cert" },
+                    { ".pl", "application/x-perl" },
+                    { ".pm", "application/x-perl" },
+                    { ".png", "image/png" },
+                    { ".prc", "application/x-pilot" },
+                    { ".ra", "audio/x-realaudio" },
+                    { ".rar", "application/x-rar-compressed" },
+                    { ".rpm", "application/x-redhat-package-manager" },
+                    { ".rss", "text/xml" },
+                    { ".run", "application/x-makeself" },
+                    { ".sea", "application/x-sea" },
+                    { ".shtml", "text/html" },
+                    { ".sit", "application/x-stuffit" },
+                    { ".swf", "application/x-shockwave-flash" },
+                    { ".tcl", "application/x-tcl" },
+                    { ".tk", "application/x-tcl" },
+                    { ".txt", "text/plain" },
+                    { ".war", "application/java-archive" },
+                    { ".wbmp", "image/vnd.wap.wbmp" },
+                    { ".wmv", "video/x-ms-wmv" },
+                    { ".xml", "text/xml" },
+                    { ".xpi", "application/x-xpinstall" },
+                    { ".zip", "application/zip" },
+			#endregion
+			};
     private Thread _serverThread;
     private string _rootDirectory;
     private HttpListener _listener;
@@ -162,7 +162,7 @@ body{
     /// <param name="port">The port for your http server</param>
     /// <param name="controller">The controller instance for the WebAPI</param>
     /// <param name="buffer">The buffer size for the http response</param>
-    public HTTPServer(string path, int port, System.Object controller, int buffer)
+    public SimpleHTTPServer(string path, int port, System.Object controller, int buffer)
     {
         this._methodController = controller;
 	bufferSize = buffer;
@@ -175,7 +175,7 @@ body{
     /// <param name="path">The root folder path in your computer (Absolute path)</param>
     /// <param name="port">The port for your http server</param>
     /// <param name="buffer">The buffer size for the http response</param>
-    public HTTPServer(string path, int port, int buffer)
+    public SimpleHTTPServer(string path, int port, int buffer)
     {
         bufferSize = buffer;
         this.Initialize(path, port);
@@ -184,20 +184,26 @@ body{
     /// <summary>
     /// Stop Server
     /// </summary>
-    public void Stop() {
+    public void Stop()
+    {
         _serverThread.Abort();
         _listener.Stop();
     }
 
-    private void Listen() {
+    private void Listen()
+    {
         _listener = new HttpListener();
         _listener.Prefixes.Add("http://*:" + _port.ToString() + "/");
         _listener.Start();
-        while (true) {
-            try {
+        while (true)
+        {
+            try
+            {
                 HttpListenerContext context = _listener.GetContext();
                 Process(context);
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 UnityEngine.Debug.Log(ex);
             }
         }
@@ -266,9 +272,9 @@ body{
             string jsonString = "";
             if (OnJsonSerialized == null)
             {
-                UnityEngine.Debug.LogError("There is no JsonSerialize delegate regist on HTTPServer.OnJsonSerialized");
+                UnityEngine.Debug.LogError("There is no JsonSerialize delegate regist on SimpleHTTPServer.OnJsonSerialized");
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                context.Response.StatusDescription = "There is no JsonSerialize delegate regist on HTTPServer.OnJsonSerialized";
+                context.Response.StatusDescription = "There is no JsonSerialize delegate regist on SimpleHTTPServer.OnJsonSerialized";
                 goto WebResponse;
             }
             else
@@ -400,15 +406,19 @@ public static class ReflectionExtensions
         }
         return parameters;
     }
-    static object ObjectCastTypeByParameterInfo(ParameterInfo parameterInfo, object value) {
+    static object ObjectCastTypeByParameterInfo(ParameterInfo parameterInfo, object value)
+    {
         if (parameterInfo.ParameterType == typeof(int) ||
             parameterInfo.ParameterType == typeof(System.Int32) ||
             parameterInfo.ParameterType == typeof(System.Int16) ||
             parameterInfo.ParameterType == typeof(System.Int64))
         {
             return (int)Convert.ChangeType(value, typeof(int));
-        } else {
+        }
+        else
+        {
             return value;
         }
+
     }
 }
