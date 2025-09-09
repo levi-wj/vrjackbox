@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>QRCoder-ImageSharp</id>
+    <version>0.10.0</version>
+    <authors>Raffael Herrmann, Joerg Plenert</authors>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <icon>nuget-icon.png</icon>
+    <readme>nuget-readme.md</readme>
+    <projectUrl>https://github.com/JPlenert/QRCoder-ImageSharp</projectUrl>
+    <description>QRCoder is a simple library, written in C#.NET, which enables you to create QR codes. Based on ImageSharp to provide plattform independency.</description>
+    <releaseNotes>Based on version 1.4.3 of QRCoder</releaseNotes>
+    <copyright>Raffael Herrmann, Joerg Plenert</copyright>
+    <tags>c# csharp qr qrcoder qrcode qr-generator qr-code-generator</tags>
+    <repository type="git" url="https://github.com/JPlenert/QRCoder-ImageSharp.git" commit="542652662b3afe6f1bf47cb8ca5f8bddd54ee971" />
+    <dependencies>
+      <group targetFramework="net8.0">
+        <dependency id="SixLabors.ImageSharp" version="2.0.0" exclude="Build,Analyzers" />
+        <dependency id="System.Text.Encoding.CodePages" version="8.0.0" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="SixLabors.ImageSharp" version="2.0.0" exclude="Build,Analyzers" />
+        <dependency id="System.Text.Encoding.CodePages" version="8.0.0" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework=".NETStandard2.1">
+        <dependency id="SixLabors.ImageSharp" version="2.0.0" exclude="Build,Analyzers" />
+        <dependency id="System.Text.Encoding.CodePages" version="8.0.0" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>
