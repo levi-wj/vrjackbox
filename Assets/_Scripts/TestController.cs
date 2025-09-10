@@ -54,7 +54,6 @@ public class TestController : MonoBehaviour
 
     public void SpawnCube()
     {
-        Debug.Log("SpawnCube called via api");
         Instantiate(cube);
     }
 
