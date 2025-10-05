@@ -3,11 +3,18 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using QRCoder;
+using System;
 
-public class TestController : MonoBehaviour
+public class LobbyHTTPController : MonoBehaviour, IHTTPController
 {
+    public void Startup(string serverUrl)
+    {
+        DisplayJoinQR(serverUrl + "/Join.html");
+    }
     [SerializeField]
     private GameObject cube;
+    [SerializeField]
+    private GhostManager gm;
     [SerializeField]
     private RawImage qrimg;
 
@@ -57,36 +64,26 @@ public class TestController : MonoBehaviour
         Instantiate(cube);
     }
 
-    public string[] SimpleStringMethod()
+    public ReturnResult IsRoundStarted()
     {
-        return new string[]{
-            "result","result2"
-        };
-    }
-    public int[] SimpleIntMethod()
-    {
-        return new int[]{
-            1,2
+        string res = GameManager.Instance.IsRoundInProgress.ToString();
+        
+        return new ReturnResult
+        {
+            code = 200,
+            msg = res
         };
     }
 
-    public ReturnResult CustomObjectReturnMethod()
+    public ReturnResult AddPlayer(string nickname)
     {
-        ReturnResult result = new ReturnResult
+        Debug.Log("Add player called. nickname:" + nickname);
+        gm.AddGhost(nickname);   
+        return new ReturnResult
         {
-            code = 1,
-            msg = "testing"
+            code = 200,
+            msg = "Success"
         };
-        return result;
-    }
-    public ReturnResult CustomObjectReturnMethodWithQuery(int code, string msg)
-    {
-        ReturnResult result = new ReturnResult
-        {
-            code = code,
-            msg = msg
-        };
-        return result;
     }
 
     //Mark as Serializable to make Unity's JsonUtility works.

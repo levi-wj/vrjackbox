@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="GameStyle.css">
+    <title>Lobby</title>
+
+    <style>
+        main {
+            margin: 2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            height: 75vh;
+            color: rgb(226, 226, 226);
+        }
+
+        button {
+            padding-left: 5em;
+            padding-right: 5em;
+            position: absolute;
+            bottom: 3em;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Lobby</h1>
+    </header>
+    <main>
+        <p style="font-weight: bold; margin-bottom: .1em" id="nickname">Your nickname: ...</p>
+        <p>Waiting for VR player to start the round</p>
+        <button id="drop-cube">Drop cube</button>
+    </main>
+</body>
+</html>
+
+<script defer>
+    const nickname = sessionStorage.getItem('nickname');
+    const nicknameEle = document.getElementById('nickname');
+    if (nickname) {
+        nicknameEle.innerText = `Your nickname: ${nickname}`;
+    } else {
+        nicknameEle.innerText = 'Your nickname could not be found';
+    }
+
+    document.getElementById('drop-cube').addEventListener('click', e => {
+        fetch('/SpawnCube');
+    });
+
+    // Continually check if round is started. If started, navigate to the game controller page
+    let pollTimeout;
+    async function pollRoundStarted() {
+        try {
+            const res = await fetch('/IsRoundStarted');
+            if (!res.ok) {
+                const retry = confirm('Unable to contact game server. Retry?');
+                if (!retry) {
+                    return; // Stop polling if user clicks Cancel
+                }
+            } else {
+                roundStarted = await res.json();
+                console.log('Round started?', roundStarted);
+                if (roundStarted.msg === 'True') {
+                    window.location = 'Game.html';
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching /IsRoundStarted:', err);
+            const retry = confirm('Error contacting game server. Retry?');
+            if (!retry) {
+                return; // Stop polling if user clicks Cancel
+            }
+        }
+        // Schedule next poll regardless of success/failure unless user cancelled
+        pollTimeout = setTimeout(pollRoundStarted, 2000);
+    }
+    // Start the polling
+    pollRoundStarted();
+</script>

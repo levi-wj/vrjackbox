@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="GameStyle.css">
     <title>Join Game</title>
 
     <style>
@@ -14,12 +15,6 @@
             color: rgb(53, 53, 53);
         }
 
-        form {
-            background-color: rgb(253, 230, 253);
-            padding: 1em;
-            border-radius: 5px;
-        }
-
         form > label {
             display: flex;
             align-items: center;
@@ -29,25 +24,66 @@
 
         form > label > input {
             margin-left: .5em;
-            padding: .25em;
         }
 
         form > button {
-            padding: .75em;
-            cursor: pointer;
             width: 100%;
-            color: inherit;
         }
     </style>
 </head>
+
+<script>
+    function storeNickname(form, event) {
+        // Stop the form from navigating away immediately
+        event.preventDefault();
+
+        const nicknameInput = form['nickname'];
+        const joinButton = document.getElementById('joinButton');
+
+        if (nicknameInput?.value) {
+            // Disable the button to prevent double submission
+            joinButton.disabled = true;
+            joinButton.textContent = 'Joining...';
+
+            const nickname = nicknameInput.value;
+            sessionStorage.setItem('nickname', nickname);
+
+            fetch('/AddPlayer?nickname=' + encodeURIComponent(nickname))
+                .then(response => {
+                    if (!response.ok) {
+                        console.error('Server responded with an error:', response.status);
+                        alert('Could not join. Is the game running on the headset?');
+                        // Re-enable the button on failure
+                        joinButton.disabled = false;
+                        joinButton.textContent = 'Join';
+                        return;
+                    }
+                    // 3. Manually navigate ONLY after a successful fetch
+                    window.location.href = 'Lobby.html?';
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    alert('Could not connect to the game server.');
+                    // Re-enable the button on failure
+                    joinButton.disabled = false;
+                    joinButton.textContent = 'Join';
+                });
+        } else {
+            // This will still show the validation bubble if the field is empty
+            nicknameInput.reportValidity();
+        }
+    }
+</script>
+
 <body>
     <main>
-        <form>
+        <form onsubmit="storeNickname(this, event)" class="panel">
             <label>
-                Game Code:
-                <input type="number" name="game-code">
+                Nickname:
+                <input type="text" name="nickname" maxlength="23" required>
             </label>
-            <button>Join</button>
+            <!-- Added an id to the button for easy access in JavaScript -->
+            <button id="joinButton">Join</button>
         </form>
     </main>
 </body>

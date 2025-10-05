@@ -1,6 +1,3 @@
-// SimpleHTTPServer.cs (Modified)
-// I've added a thread-safe queue and changed how methods are invoked.
-
 using UnityEngine;
 using System;
 using System.Collections.Concurrent; // Required for the thread-safe queue

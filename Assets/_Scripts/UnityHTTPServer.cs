@@ -10,6 +10,11 @@ using System.Net;
 using System.Net.Sockets;
 using UnityEngine.Networking; // Required for UnityWebRequest
 
+public interface IHTTPController
+{
+    void Startup(string serverUrl);
+}
+
 public class UnityHTTPServer : MonoBehaviour
 {
     [SerializeField]
@@ -18,11 +23,11 @@ public class UnityHTTPServer : MonoBehaviour
     public bool UseStreamingAssetsPath = true; // This will now control the SOURCE, not the final path.
     [SerializeField]
     public int bufferSize = 16;
-    
+
     public static UnityHTTPServer Instance;
 
     public MonoBehaviour controller;
-    
+
     private SimpleHTTPServer myServer;
     private string serverRootPath; // The path the server will actually use.
 
@@ -30,7 +35,10 @@ public class UnityHTTPServer : MonoBehaviour
     // You MUST list every file you want to be accessible here.
     private List<string> filesToExtract = new List<string>
     {
-        "Game.html"
+        "Join.html",
+        "Lobby.html",
+        "Game.html",
+        "GameStyle.css"
     };
 
     void Awake()
@@ -39,7 +47,7 @@ public class UnityHTTPServer : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            
+
             // The server will now serve files from the persistent data path.
             serverRootPath = Application.persistentDataPath;
 
@@ -64,17 +72,17 @@ public class UnityHTTPServer : MonoBehaviour
             Debug.LogError("HTTP Server Controller not assigned in the Inspector!");
             controller = this;
         }
-        
+
         StartServer();
         string serverUrl = GetHttpUrl();
         Debug.Log($"Server started. Files are served from: {serverRootPath}");
-        Debug.Log($"Connect at: {serverUrl}");
+        Debug.Log($"Connect at: {serverUrl}/Join.html");
 
-        // Display the IP address in your game's UI
-        TestController testController = controller as TestController;
-        if (testController != null)
+        // Call Startup on the controller if it implements IHTTPController
+        IHTTPController httpController = controller as IHTTPController;
+        if (httpController != null)
         {
-            testController.DisplayJoinQR(serverUrl);
+            httpController.Startup(serverUrl);
         }
     }
 
@@ -120,8 +128,9 @@ public class UnityHTTPServer : MonoBehaviour
     {
         // Pass the NEW server root path to the server.
         myServer = new SimpleHTTPServer(serverRootPath, port, controller, bufferSize);
-        
-        myServer.OnJsonSerialized += (result) => {
+
+        myServer.OnJsonSerialized += (result) =>
+        {
             return JsonUtility.ToJson(result);
         };
     }
@@ -130,7 +139,7 @@ public class UnityHTTPServer : MonoBehaviour
     {
         if (Instance == null || Instance.myServer == null) return "Server not started";
         // The URL now needs to point to the specific HTML file.
-        return $"http://{GetLocalIPAddress()}:{Instance.myServer.Port}/Game.html";
+        return $"http://{GetLocalIPAddress()}:{Instance.myServer.Port}";
     }
 
     public static string GetLocalIPAddress()
