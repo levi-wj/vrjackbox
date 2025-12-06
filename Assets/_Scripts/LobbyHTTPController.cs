@@ -14,9 +14,11 @@ public class LobbyHTTPController : MonoBehaviour, IHTTPController
     [SerializeField]
     private GameObject cube;
     [SerializeField]
-    private GhostManager gm;
+    private GhostManager ghost;
     [SerializeField]
     private RawImage qrimg;
+    [SerializeField]
+    private Button startButton;
 
     public void DisplayJoinQR(string url)
     {
@@ -78,7 +80,11 @@ public class LobbyHTTPController : MonoBehaviour, IHTTPController
     public ReturnResult AddPlayer(string nickname)
     {
         Debug.Log("Add player called. nickname:" + nickname);
-        gm.AddGhost(nickname);   
+        ghost.AddGhost(nickname);
+
+        // Enable the start button now that someone has joined
+        startButton.interactable = true;
+
         return new ReturnResult
         {
             code = 200,
